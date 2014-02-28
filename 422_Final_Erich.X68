@@ -4,46 +4,85 @@
 * Date       :
 * Description:
 *-----------------------------------------------------------
-    ORG    $1000
-START:                  ; first instruction of program
-
+                  
 *D0: Temp
 *D1: Output
-*D2: Instruction
-*D3: SR Variable
-*D4: SR Variable
-*D5: Unused
+*D2: Instruction 1st word
+*D3: Instruction 2nd word
+*D4: JSR variable
+*D5: JSR variable
 *D6: Unused
 *D7: Unused
 
-*A0: Used in jump table addressing
-*A1: Size
-*A2:
-*A3:
-*A4:
-*A5:
+*A0: 
+*A1: 
+*A2: Used in jump table addressing
+*A3: Size
+*A4: start memory
+*A5: end memory
 *A6: Decoded output
 *A7: Do not use
+
+            ORG     $1000
+
+START:
+            LEA     output,A6
+            LEA     $7000,A4
+            CLR     (A4)
+            ADDI.W  #$00,(A4)+
+            ADDI.W  #$11,(A4)+
+            ADDI.W  #$AB,(A4)+
+            ADDI.W  #$BA,(A4)+
+            ADDI.W  #$77,(A4)+
+            ADDI.W  #$6F,(A4)+
+            ADDI.W  #$55,(A4)+
+            ADDI.W  #$05,(A4)+
+            ADDI.W  #$AC,(A4)+
+            ADDI.W  #$4D,(A4)+
+            ADDI.W  #$3A,(A4)+
+            ADDI.W  #$AA,(A4)+
+            ADDI.W  #$BB,(A4)+
+            ADDI.W  #$CC,(A4)+
+            ADDI.W  #$DD,(A4)+
+            ADDI.W  #$15,(A4)+
+
+            LEA     $7000,A4        *reset A4
+            CLR     D6
+            ADDI.B  #16,D6
+            BRA     addressing
+
+print       MOVE.B #$00,(A6)        * Add terminator to output str
+            LEA output,A1           * load output to A1
+            MOVEQ #13,D0            * Load trap code for printing
+            TRAP #15                * Print output buffer
+            SUBI.B  #1,D6
+            CMPI.B  #0,D6
+            BEQ     done
+            LEA     output,A6       *reset output
+            BRA     addressing
 
 *---------------------------------------------------------------
 *   Addressing
 *   Extract the 6 least significant digits from the instruction
 *---------------------------------------------------------------
-addressing  MOVE.W  D2,D3           *get instruction for parsing
-            EORI.W  ea_regMask,D3   *isolate the register
-            MOVE.W  D2,D4           *get instruction for parsing
-            EORI.W  ea_modeMask,D4  *isolate the mode
-            
-            *needs logical shifts for D3 and D4
-            
-            LEA     add_mode,A0
-            JSR     (A0,D2)         *jump offset based on D2   
-            RTS
+addressing  MOVE.W  (A4)+,D2
+            MOVE.B  D2,D4           *get byte instruction for parsing
+            LSL.B   #5,D4           *move left 5, clears left most
+            ROR.B   #5,D4           *rotate right 5 
+            MOVE.B  D2,D5           *get instruction for parsing
+            LSR.B   #3,D5           *move mode bits to 0-3
+            LSL.B   #5,D5           *move left 5, clears left most
+            ROR.B   #5,D5           *rotate right 5             
+            LEA     add_mode,A2
+            MULU    #6,D4           *form offset
+            MULU    #6,D5           *form offset
+            JSR     0(A2,D4)        *jump offset based on D2 
+            BRA     print  
 *---------------------------------------------------------------
 *   Addressing Mode Jump Table
 *---------------------------------------------------------------
-add_mode    JMP     add_mode000     * Dn
-            JMP     add_mode001     * An
+add_mode    JMP     add_mode000     *Dn
+            JMP     add_mode001     *An
             JMP     add_mode010     *(An)
             JMP     add_mode011     *(An)+
             JMP     add_mode100     *-(An)
@@ -54,32 +93,32 @@ add_mode    JMP     add_mode000     * Dn
 *---------------------------------------------------------------
 *   Addressing Modes
 *---------------------------------------------------------------        
-add_mode000 MOVE.B  #'B',(A6)+      *Add D to output 
-            LEA     reg_num,A1 
-            JSR     (A1,D1)         *get reg num
+add_mode000 MOVE.B  #'D',(A6)+      *Add D to output 
+            LEA     reg_num,A2 
+            JSR     0(A2,D5)         *get reg num
             RTS
 add_mode001 MOVE.B  #'A',(A6)+      *Add A to output  
-            LEA     reg_num,A1 
-            JSR     (A1,D1)         *get reg num
+            LEA     reg_num,A2 
+            JSR     0(A2,D5)         *get reg num
             RTS
 add_mode010 MOVE.B  #'(',(A6)+      *Add ( to output 
             MOVE.B  #'A',(A6)+      *Add A to output
-            LEA     reg_num,A1 
-            JSR     (A1,D1)         *get reg num
+            LEA     reg_num,A2 
+            JSR     0(A2,D5)         *get reg num
             MOVE.B  #')',(A6)+      *Add ) to output
             RTS
 add_mode011 MOVE.B  #'(',(A6)+      *Add ( to output 
             MOVE.B  #'A',(A6)+      *Add A to output
-            LEA     reg_num,A1 
-            JSR     (A1,D1)         *get reg num
+            LEA     reg_num,A2 
+            JSR     0(A2,D5)         *get reg num
             MOVE.B  #')',(A6)+      *Add ) to output
             MOVE.B  #'+',(A6)+      *Add + to output
             RTS
 add_mode100 MOVE.B  #'-',(A6)+      *Add - to output 
             MOVE.B  #'(',(A6)+      *Add ( to output 
             MOVE.B  #'A',(A6)+      *Add A to output
-            LEA     reg_num,A1 
-            JSR     (A1,D1)         *get reg num
+            LEA     reg_num,A2 
+            JSR     0(A2,D5)         *get reg num
             MOVE.B  #')',(A6)+      *Add ) to output
             RTS
 add_mode101 MOVE.B  #'(',(A6)+      *Add ( to output 
@@ -88,8 +127,8 @@ add_mode101 MOVE.B  #'(',(A6)+      *Add ( to output
             MOVE.B  #'6',(A6)+      *Add 6 to output 
             MOVE.B  #',',(A6)+      *Add , to output 
             MOVE.B  #'A',(A6)+      *Add A to output
-            LEA     reg_num,A1 
-            JSR     (A1,D1)         *get reg num
+            LEA     reg_num,A2 
+            JSR     0(A2,D5)         *get reg num
             MOVE.B  #')',(A6)+      *Add ) to output
             RTS
 add_mode110 MOVE.B  #'(',(A6)+      *Add ( to output 
@@ -97,8 +136,8 @@ add_mode110 MOVE.B  #'(',(A6)+      *Add ( to output
             MOVE.B  #'8',(A6)+      *Add 8 to output
             MOVE.B  #',',(A6)+      *Add , to output 
             MOVE.B  #'A',(A6)+      *Add A to output
-            LEA     reg_num,A1 
-            JSR     (A1,D1)         *get reg num
+            LEA     reg_num,A2 
+            JSR     0(A2,D5)         *get reg num
             MOVE.B  #',',(A6)+      *Add , to output 
             MOVE.B  #'X',(A6)+      *Add X to output         
             MOVE.B  #')',(A6)+      *Add ) to output
@@ -138,16 +177,17 @@ reg_num111  MOVE.B  #'7',(A6)+         *register num 8
 *   Immediate Data
 *-------------------------------------------------------------
 immediate   *not implemented
-*-------------------------------------------------------------
-*   Masks
-*-------------------------------------------------------------
-ea_regMask  DC.W    $0007           *bits 1-3
-ea_modeMask DC.W    $0038           *bits 3-5
+
 
 
 * Put variables and constants here
+output DS.B 80
 
-    END    START        ; last line of source
+done    CLR     D0    
+        END     START        ; last line of source
+
+
+
 
 
 *~Font name~Courier New~
