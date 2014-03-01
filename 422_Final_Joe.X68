@@ -32,20 +32,26 @@ greeting    MOVE.B      #task0,D0           *Start of greeting, Loads D0 with gr
             CMPI.B      #LCN,D2             *Check if D2 == n                        
             BEQ         stop                *Stop                 
 
+*-----------------------------------------------------------
+*       Begin
+*
+*-----------------------------------------------------------
+begin       JSR         
+
 
 *-----------------------------------------------------------
 *       I/O Routine
 *
 *-----------------------------------------------------------
-LF             EQU     $0A                 *ASCII value for Line feed
-CR             EQU     $0D                 *ASCII value for Carriage return
-task0          EQU     00                  *Task0 from Berger, print string w/ newline
-task1          EQU     01                  *Task1 from Berger, prompt for input w/o newline
-task2          EQU     02                  *Task2 from Berger, prompt and wait for input
-UCN            EQU     $4E                 *ASCII value for N for User Prompt
-LCN            EQU     $6E                 *ASCII value for n for User Prompt
-UCY            EQU     $59                 *ASCII value for Y for User Prompt
-LCY            EQU     $79                 *ASCII value for y for User Prompt
+LF          EQU         $0A                 *ASCII value for Line feed
+CR          EQU         $0D                 *ASCII value for Carriage return
+task0       EQU         00                  *Task0 from Berger, print string w/ newline
+task1       EQU         01                  *Task1 from Berger, prompt for input w/o newline
+task2       EQU         02                  *Task2 from Berger, prompt and wait for input
+UCN         EQU         $4E                 *ASCII value for N for User Prompt
+LCN         EQU         $6E                 *ASCII value for n for User Prompt
+UCY         EQU         $59                 *ASCII value for Y for User Prompt
+LCY         EQU         $79                 *ASCII value for y for User Prompt
 
 *-----------------------------------------------------------
 *       I/O Prompts Jump Table
@@ -60,13 +66,13 @@ greet           DC.B        CR,LF,'TEAM KSE Disassembler - CSS422 Winter 2014',C
 *       I/O Variables
 *
 *-----------------------------------------------------------
-decision	   DS.B	 20	            *to hold User's Response
+decision	DS.B	    20	            *to hold User's Response
 
 *-----------------------------------------------------------
 *       I/O Error Flags
 *
 *-----------------------------------------------------------
-stop            STOP     #$2700
+stop        STOP        #$2700
 
 
     END    START        ; last line of source
