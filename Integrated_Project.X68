@@ -28,7 +28,7 @@ START:                  ; first instruction of program
             LEA     output,A6
             LEA     $7000,A4
             CLR     (A4)
-            ADDI.W  #$5100,(A4)+
+            ADDI.W  #$E3C8,(A4)+
             ADDI.W  #$00AB,(A4)+
             ADDI.W  #$ABBA,(A4)+
             ADDI.W  #$BA77,(A4)+
@@ -279,8 +279,103 @@ op_1101     RTS
 *   LSL
 *   ROL
 ************************************************************
-op_1110     RTS
-
+op_1110     JSR     iso6to7         get size of instruction
+            CMP.B   #3,d3           long
+            BLT     regShift            
+            JSR     iso9to10        get type of memory shift
+            CMP.B   #0,D3           arithmetic shift
+            BEQ     aMemShift
+            CMP.B   #1,D3           logical shift
+            BEQ     lMemShift
+            CMP.B   #2,D3           rotate with extend
+            BEQ     xMemError
+            CMP.B   #3,d3           rotate
+            BEQ     rMemShift
+regShift    MOVE.B  D3,D4           move size to D4
+            JSR     iso3to4         get shift type
+            MULU.W  #6,D3           form offset
+            LEA     op_1110_sub,A2  load op_1110_sub to A2
+            JSR     0(A2,D3)        jump to table 
+            MOVE.B  #'.',(A6)+      Add . to output
+            MULU.W  #6,D4           form offset for size
+            LEA     get_size,A2
+            JSR     0(A2,D4)
+            BTST.L  #5,D2           get i/r
+            BEQ     getShiftNum        
+            MOVE.B  #' ',(A6)+      Add ' ' to output
+            MOVE.B  #' ',(A6)+      Add ' ' to output
+            MOVE.B  #' ',(A6)+      Add ' ' to output
+            MOVE.B  #' ',(A6)+      Add ' ' to output
+            MOVE.B  #'D',(A6)+      Add 'D' to output            
+            JSR     iso9to11        get num of shifts
+            MULU.W  #6,D3
+            LEA     reg_num,A2      load reg addressing jump
+            JSR     0(A2,D3)        jump to table             
+            MOVE.B  #',',(A6)+      Add ',' to output   
+            MOVE.B  #'D',(A6)+      Add 'D' to output            
+            JSR     iso0to2         get source register
+            MULU.W  #6,D3           create offset
+            LEA     reg_num,A2      load reg addressing jump
+            JSR     0(A2,D3)        jump to table          
+            RTS
+aMemShift   JSR     arithm
+            BRA     memAddress  
+lMemShift   JSR     logical
+            BRA     memAddress            
+rMemShift   JSR     rotate
+memAddress  MOVE.B  #' ',(A6)+      Add ' ' to output
+            MOVE.B  #' ',(A6)+      Add ' ' to output
+            MOVE.B  #' ',(A6)+      Add ' ' to output
+            MOVE.B  #' ',(A6)+      Add ' ' to output
+            MOVE.B  #' ',(A6)+      Add ' ' to output
+            JSR     addressing  
+            RTS
+getShiftNum MOVE.B  #' ',(A6)+      Add ' ' to output
+            MOVE.B  #' ',(A6)+      Add ' ' to output
+            MOVE.B  #' ',(A6)+      Add ' ' to output
+            MOVE.B  #' ',(A6)+      Add ' ' to output
+            MOVE.B  #'#',(A6)+      Add '#' to output            
+            JSR     iso9to11        get num of shifts
+            MULU.W  #6,D3           create offset
+            LEA     reg_num,A2      cheep binary to num
+            JSR     0(A2,D3)        jump to table
+            MOVE.B  #',',(A6)+      Add ',' to output   
+            MOVE.B  #'D',(A6)+      Add 'D' to output            
+            JSR     iso0to2         get source register
+            MULU.W  #6,D3           create offset
+            LEA     reg_num,A2      load reg addressing jump
+            JSR     0(A2,D3)        jump to table
+            RTS
+xMemError   MOVE.B  #'B',(A6)+      *Add B to output
+            MOVE.B  #'A',(A6)+      *Add A to output
+            MOVE.B  #'D',(A6)+      *Add D to output
+            MOVE.B  #' ',(A6)+      *Add ' ' to output
+            MOVE.B  #'C',(A6)+      *Add C to output
+            MOVE.B  #'O',(A6)+      *Add O to output
+            MOVE.B  #'D',(A6)+      *Add D to output
+            MOVE.B  #'E',(A6)+      *Add E to output
+            RTS                    
+************************************************************
+*   LS\AS\RO sub table
+************************************************************
+op_1110_sub JMP     arithm
+            JMP     logical
+            JMP     rotate
+arithm      MOVE.B  #'A',(A6)+      Add A to output
+            MOVE.B  #'S',(A6)+      Add S to output
+            BRA     direction
+logical     MOVE.B  #'L',(A6)+      Add L to output
+            MOVE.B  #'S',(A6)+      Add S to output
+            BRA     direction
+rotate      MOVE.B  #'R',(A6)+      Add R to output
+            MOVE.B  #'O',(A6)+      Add O to output
+            BRA     direction
+direction   BTST.L  #8,D2           Test bit 5 of instruction
+            BEQ     right
+            MOVE.B  #'L',(A6)+      Add L to output 
+            RTS
+right       MOVE.B  #'R',(A6)+      Add R to output            
+            RTS
 ************************************************************
 *   1111 unknown
 ************************************************************
@@ -293,19 +388,66 @@ op_1111     MOVE.B  #'B',(A6)+      *Add B to output
             MOVE.B  #'D',(A6)+      *Add D to output
             MOVE.B  #'E',(A6)+      *Add E to output
             RTS
-
+************************************************************
+* isolate bits 0 to 2 in D3
+************************************************************ 
+iso0to2     MOVE.W  D2,D3           get current instruction
+            LSL.W   #8,D3           shift left 8
+            LSL.W   #5,D3           shift left 5
+            LSR.W   #8,D3           shift back 8
+            LSR.W   #5,D3           shift back 5
+            RTS             
+************************************************************
+* isolate bits 3 and 4 in D3
+************************************************************ 
+iso3to4     MOVE.W  D2,D3           get current instruction
+            LSL.W   #8,D3           shift left 8
+            LSL.W   #3,D3           shift left 4
+            LSR.W   #8,D3           shift back 8
+            LSR.W   #6,D3           shift back 6
+            RTS           
+************************************************************
+* isolate bits 6 and 7 in D3
+************************************************************
+iso6to7     MOVE.W  D2,D3           get current instruction
+            LSL.W   #8,D3           shift left 8
+            LSR.W   #8,D3           shift right 8
+            LSR.W   #6,D3           shift right 6
+            RTS
+************************************************************
+* isolate bits 9 to 10 in D3
+************************************************************
+iso9to10    MOVE.W  D2,D3           get current instruction
+            LSL.W   #5,D3           shift left 5
+            LSR.W   #8,D3           shift right 8
+            LSR.W   #6,D3           shift right 6
+            RTS
+************************************************************
+* isolate bits 9 to 10 in D3
+************************************************************            
+iso9to11    MOVE.W  D2,D3           get current instruction
+            LSL.W   #4,D3           shift left 4
+            LSR.W   #8,D3           shift right 8
+            LSR.W   #5,D3           shift right 4
+            RTS        
 ************************************************************
 *   Size Jump Table
 ************************************************************
-get_size    JMP size00              *illegal
-            JMP size01              *BYTE
-            JMP size10              *WORD
-            JMP size11              *LONG
+get_size    JMP size00              *BYTE
+            JMP size01              *WORD
+            JMP size10              *LONG
+            JMP size11              *ILLEGAL
             RTS
 ************************************************************
 *   Size Sub-Jump Table
 ************************************************************
 size00      MOVE.B  #'B',(A6)+      *Add B to output
+            RTS
+size01      MOVE.B  #'W',(A6)+      *Add W to output
+            RTS
+size10      MOVE.B  #'L',(A6)+      *Add L to output
+            RTS 
+size11      MOVE.B  #'B',(A6)+      *Add B to output
             MOVE.B  #'A',(A6)+      *Add A to output
             MOVE.B  #'D',(A6)+      *Add D to output
             MOVE.B  #' ',(A6)+      *Add ' ' to output
@@ -313,29 +455,22 @@ size00      MOVE.B  #'B',(A6)+      *Add B to output
             MOVE.B  #'I',(A6)+      *Add I to output
             MOVE.B  #'Z',(A6)+      *Add Z to output
             MOVE.B  #'E',(A6)+      *Add E to output
-            RTS
-size01      MOVE.B  #'B',(A6)+      *Add B to output
-            RTS
-size10      MOVE.B  #'W',(A6)+      *Add W to output
-            RTS
-size11      MOVE.B  #'L',(A6)+      *Add L to output
-            RTS           
+            RTS          
 *---------------------------------------------------------------
 *   Addressing
 *   Extract the 6 least significant digits from the instruction
+*   Assumes mode is in D3
+*   Assumes register is in D4
 *---------------------------------------------------------------
-addressing  MOVE.W  (A4)+,D2
-            MOVE.B  D2,D4           *get byte instruction for parsing
-            LSL.B   #5,D4           *move left 5, clears left most
-            ROR.B   #5,D4           *rotate right 5 
-            MOVE.B  D2,D5           *get instruction for parsing
-            LSR.B   #3,D5           *move mode bits to 0-3
-            LSL.B   #5,D5           *move left 5, clears left most
-            ROR.B   #5,D5           *rotate right 5             
+addressing  MOVE.B  D2,D3           get instruction for bytes 3-5 (mode)
+            LSR.B   #3,D3           move right 3
+            ANDI.B  #7,D3           mask for just first 3 bits
+            MOVE.B  D2,D4           get instruction for bytes 3-5 (reg)
+            ANDI.B  #7,D4           mask for just first 3 bits      
             LEA     add_mode,A2
-            MULU    #6,D4           *form offset
-            MULU    #6,D5           *form offset
-            JSR     0(A2,D4)        *jump offset based on D2 
+            MULU    #6,D3           form offset
+            MULU    #6,D4           form offset
+            JSR     0(A2,D3)        jump offset based on D3 
             BRA     print  
 *---------------------------------------------------------------
 *   Addressing Mode Jump Table
@@ -354,22 +489,22 @@ add_mode    JMP     add_mode000     *Dn
 *---------------------------------------------------------------        
 add_mode000 MOVE.B  #'D',(A6)+      *Add D to output 
             LEA     reg_num,A2 
-            JSR     0(A2,D5)         *get reg num
+            JSR     0(A2,D4)         *get reg num
             RTS
 add_mode001 MOVE.B  #'A',(A6)+      *Add A to output  
             LEA     reg_num,A2 
-            JSR     0(A2,D5)         *get reg num
+            JSR     0(A2,D4)         *get reg num
             RTS
 add_mode010 MOVE.B  #'(',(A6)+      *Add ( to output 
             MOVE.B  #'A',(A6)+      *Add A to output
             LEA     reg_num,A2 
-            JSR     0(A2,D5)         *get reg num
+            JSR     0(A2,D4)         *get reg num
             MOVE.B  #')',(A6)+      *Add ) to output
             RTS
 add_mode011 MOVE.B  #'(',(A6)+      *Add ( to output 
             MOVE.B  #'A',(A6)+      *Add A to output
             LEA     reg_num,A2 
-            JSR     0(A2,D5)         *get reg num
+            JSR     0(A2,D4)         *get reg num
             MOVE.B  #')',(A6)+      *Add ) to output
             MOVE.B  #'+',(A6)+      *Add + to output
             RTS
@@ -377,7 +512,7 @@ add_mode100 MOVE.B  #'-',(A6)+      *Add - to output
             MOVE.B  #'(',(A6)+      *Add ( to output 
             MOVE.B  #'A',(A6)+      *Add A to output
             LEA     reg_num,A2 
-            JSR     0(A2,D5)         *get reg num
+            JSR     0(A2,D4)         *get reg num
             MOVE.B  #')',(A6)+      *Add ) to output
             RTS
 add_mode101 MOVE.B  #'(',(A6)+      *Add ( to output 
@@ -387,7 +522,7 @@ add_mode101 MOVE.B  #'(',(A6)+      *Add ( to output
             MOVE.B  #',',(A6)+      *Add , to output 
             MOVE.B  #'A',(A6)+      *Add A to output
             LEA     reg_num,A2 
-            JSR     0(A2,D5)         *get reg num
+            JSR     0(A2,D4)         *get reg num
             MOVE.B  #')',(A6)+      *Add ) to output
             RTS
 add_mode110 MOVE.B  #'(',(A6)+      *Add ( to output 
@@ -396,7 +531,7 @@ add_mode110 MOVE.B  #'(',(A6)+      *Add ( to output
             MOVE.B  #',',(A6)+      *Add , to output 
             MOVE.B  #'A',(A6)+      *Add A to output
             LEA     reg_num,A2 
-            JSR     0(A2,D5)         *get reg num
+            JSR     0(A2,D4)         *get reg num
             MOVE.B  #',',(A6)+      *Add , to output 
             MOVE.B  #'X',(A6)+      *Add X to output         
             MOVE.B  #')',(A6)+      *Add ) to output
@@ -442,6 +577,8 @@ output  DS.B 80
 
 done    CLR     D0
         END    START        ; last line of source
+
+
 
 *~Font name~Courier New~
 *~Font size~10~
