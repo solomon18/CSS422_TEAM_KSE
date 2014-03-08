@@ -10,6 +10,24 @@ START:                  ; first instruction of program
 * Put program code here
 * Displays greeting to user
 
+*D0: Temp
+*D1: Output
+*D2: Instruction 1st word
+*D3: Instruction 2nd word
+*D4: JSR variable
+*D5: JSR variable
+*D6: Unused
+*D7: Unused
+
+*A0: 
+*A1: 
+*A2: Used in jump table addressing
+*A3: Size
+*A4: start memory
+*A5: end memory
+*A6: Decoded output
+*A7: Do not use
+
 *-----------------------------------------------------------
 *       Greetings
 *
