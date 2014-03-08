@@ -36,7 +36,7 @@ greeting    MOVE.B      #task0,D0           *Start of greeting, Loads D0 with gr
 *       Begin(Starting address)
 *
 *-----------------------------------------------------------
-begin       JSR         *clr reg
+begin       JSR             *clr reg
             MOVE.B      #task1,D0           *holds input from user
             LEA         startAddr,A1       *A1 holds string prompt for startAddr
             TRAP        #15                   
@@ -44,7 +44,10 @@ begin       JSR         *clr reg
             MOVE.B      #task2,D0           *holds task2, get input
             
             
-            CMPI.B      #00,D1
+            CMPI.B      #00,D1                 *Compare string addr length to 0
+            BLE         startError             *lower than equal to 0
+            CMPI.B      #byteL,D1            *Compare string addr length to 8
+            BGE         startError             *greater than or equal to 8
                 
                 
                 
