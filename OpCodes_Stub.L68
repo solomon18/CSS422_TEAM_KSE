@@ -1,0 +1,394 @@
+00001000 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.14.00
+Created On: 3/5/2014 11:59:34 PM
+
+00000000                             1  *-----------------------------------------------------------
+00000000                             2  * Title      :
+00000000                             3  * Written by :
+00000000                             4  * Date       :
+00000000                             5  * Description:
+00000000                             6  *-----------------------------------------------------------
+00000000                             7  
+00000000                             8  *D0: Temp
+00000000                             9  *D1: Output
+00000000                            10  *D2: Instruction 1st word
+00000000                            11  *D3: JSR variable
+00000000                            12  *D4: JSR variable
+00000000                            13  *D5: Unused
+00000000                            14  *D6: Unused
+00000000                            15  *D7: Unused
+00000000                            16  
+00000000                            17  *A0: 
+00000000                            18  *A1: 
+00000000                            19  *A2: Used in jump table addressing
+00000000                            20  *A3: Size
+00000000                            21  *A4: start memory
+00000000                            22  *A5: end memory
+00000000                            23  *A6: Decoded output
+00000000                            24  *A7: Do not use
+00000000                            25  
+00001000                            26      ORG    $1000
+00001000                            27  START:                  ; first instruction of program
+00001000  4DF9 00001306             28              LEA     output,A6
+00001006  49F8 7000                 29              LEA     $7000,A4
+0000100A  4254                      30              CLR     (A4)
+0000100C  065C E100                 31              ADDI.W  #$E100,(A4)+
+00001010  065C 00AB                 32              ADDI.W  #$00AB,(A4)+
+00001014  065C ABBA                 33              ADDI.W  #$ABBA,(A4)+
+00001018  065C BA77                 34              ADDI.W  #$BA77,(A4)+
+0000101C  065C 776F                 35              ADDI.W  #$776F,(A4)+
+00001020  065C 6F15                 36              ADDI.W  #$6F15,(A4)+
+00001024  065C 1505                 37              ADDI.W  #$1505,(A4)+
+00001028  065C 05AC                 38              ADDI.W  #$05AC,(A4)+
+0000102C  065C AC4D                 39              ADDI.W  #$AC4D,(A4)+
+00001030  065C 4D3A                 40              ADDI.W  #$4D3A,(A4)+
+00001034  065C 3AAA                 41              ADDI.W  #$3AAA,(A4)+
+00001038  065C AABB                 42              ADDI.W  #$AABB,(A4)+
+0000103C  065C BBCC                 43              ADDI.W  #$BBCC,(A4)+
+00001040  065C CCDD                 44              ADDI.W  #$CCDD,(A4)+
+00001044  065C DD15                 45              ADDI.W  #$DD15,(A4)+
+00001048  065C 1513                 46              ADDI.W  #$1513,(A4)+
+0000104C                            47  
+0000104C  49F8 7000                 48              LEA     $7000,A4        reset A4
+00001050  4246                      49              CLR     D6
+00001052  0606 0010                 50              ADDI.B  #16,D6
+00001056  6000 0020                 51              BRA     main            branch to main
+0000105A                            52  
+0000105A  1CBC 0000                 53  print       MOVE.B #$00,(A6)        Add terminator to output str
+0000105E  43F9 00001306             54              LEA output,A1           load output to A1
+00001064  700D                      55              MOVEQ #13,D0            Load trap code for printing
+00001066  4E4F                      56              TRAP #15                Print output buffer
+00001068  5306                      57              SUBI.B  #1,D6
+0000106A  0C06 0000                 58              CMPI.B  #0,D6
+0000106E  6700 02E6                 59              BEQ     done            branch to done
+00001072  4DF9 00001306             60              LEA     output,A6       reset output
+00001078                            61  
+00001078                            62  ************************************************************
+00001078                            63  *   main
+00001078                            64  ************************************************************
+00001078  341C                      65  main        MOVE.W  (A4)+,D2        get next word
+0000107A  3602                      66              MOVE.W  D2,D3           get word for decoding
+0000107C  E04B                      67              LSR.W   #8,D3           move right 8
+0000107E  E84B                      68              LSR.W   #4,D3           move right 4
+00001080  C6FC 0006                 69              MULU    #6,D3           form offset
+00001084  45F9 00001090             70              LEA     op_jump,A2      load jump table
+0000108A  4EB2 3000                 71              JSR     0(A2,D3)        Jump
+0000108E  60CA                      72              BRA     print           branch to print
+00001090                            73  ************************************************************
+00001090                            74  *   OP-Code Jump
+00001090                            75  ************************************************************            
+00001090  4EF9 000010F2             76  op_jump     JMP     op_0000         Jump to 0000
+00001096  4EF9 000010F4             77              JMP     op_0001         Jump to 0001
+0000109C  4EF9 00001122             78              JMP     op_0010         Jump to 0010
+000010A2  4EF9 00001150             79              JMP     op_0011         Jump to 0011
+000010A8  4EF9 0000117E             80              JMP     op_0100         Jump to 0100
+000010AE  4EF9 00001180             81              JMP     op_0101         Jump to 0101
+000010B4  4EF9 000011C0             82              JMP     op_0110         Jump to 0110
+000010BA  4EF9 000011C2             83              JMP     op_0111         Jump to 0111
+000010C0  4EF9 00001206             84              JMP     op_1000         Jump to 1000
+000010C6  4EF9 00001208             85              JMP     op_1001         Jump to 1001
+000010CC  4EF9 0000120A             86              JMP     op_1010         Jump to 1010
+000010D2  4EF9 0000122C             87              JMP     op_1011         Jump to 1011
+000010D8  4EF9 0000122E             88              JMP     op_1100         Jump to 1100
+000010DE  4EF9 00001230             89              JMP     op_1101         Jump to 1101
+000010E4  4EF9 00001232             90              JMP     op_1110         Jump to 1100
+000010EA  4EF9 00001296             91              JMP     op_1111         Jump to 1111
+000010F0  4E75                      92              RTS                     *return
+000010F2                            93  ************************************************************
+000010F2                            94  *   0000
+000010F2                            95  *   ADDI
+000010F2                            96  *   ANDI
+000010F2                            97  *   BCHG
+000010F2                            98  *   CMPI
+000010F2                            99  *   EORI
+000010F2                           100  ************************************************************
+000010F2  4E75                     101  op_0000     RTS
+000010F4                           102  
+000010F4                           103  ************************************************************
+000010F4                           104  *   0001
+000010F4                           105  *   MOVE.B
+000010F4                           106  ************************************************************
+000010F4  1CFC 004D                107  op_0001     MOVE.B  #'M',(A6)+      Add M to output
+000010F8  1CFC 004F                108              MOVE.B  #'O',(A6)+      Add O to output
+000010FC  1CFC 0056                109              MOVE.B  #'V',(A6)+      Add V to output
+00001100  1CFC 0045                110              MOVE.B  #'E',(A6)+      Add E to output
+00001104  1CFC 002E                111              MOVE.B  #'.',(A6)+      Add . to output
+00001108  1CFC 0042                112              MOVE.B  #'B',(A6)+      Add B to output
+0000110C  1CFC 0020                113              MOVE.B  #' ',(A6)+      Add ' ' to output
+00001110  1CFC 0020                114              MOVE.B  #' ',(A6)+      Add ' ' to output
+00001114  1CFC 0020                115              MOVE.B  #' ',(A6)+      Add ' ' to output
+00001118  1CFC 0020                116              MOVE.B  #' ',(A6)+      Add ' ' to output
+0000111C  1CFC 0020                117              MOVE.B  #' ',(A6)+      Add ' ' to output         
+00001120  4E75                     118              RTS
+00001122                           119              
+00001122                           120  ************************************************************
+00001122                           121  *   0010 
+00001122                           122  *   MOVE.W
+00001122                           123  ************************************************************
+00001122  1CFC 004D                124  op_0010     MOVE.B  #'M',(A6)+      Add M to output
+00001126  1CFC 004F                125              MOVE.B  #'O',(A6)+      Add O to output
+0000112A  1CFC 0056                126              MOVE.B  #'V',(A6)+      Add V to output
+0000112E  1CFC 0045                127              MOVE.B  #'E',(A6)+      Add E to output
+00001132  1CFC 002E                128              MOVE.B  #'.',(A6)+      Add . to output
+00001136  1CFC 0057                129              MOVE.B  #'W',(A6)+      Add W to output
+0000113A  1CFC 0020                130              MOVE.B  #' ',(A6)+      Add ' ' to output
+0000113E  1CFC 0020                131              MOVE.B  #' ',(A6)+      Add ' ' to output
+00001142  1CFC 0020                132              MOVE.B  #' ',(A6)+      Add ' ' to output
+00001146  1CFC 0020                133              MOVE.B  #' ',(A6)+      Add ' ' to output
+0000114A  1CFC 0020                134              MOVE.B  #' ',(A6)+      Add ' ' to output          
+0000114E  4E75                     135              RTS
+00001150                           136  
+00001150                           137  ************************************************************
+00001150                           138  *   0011 
+00001150                           139  *   MOVE.L
+00001150                           140  ************************************************************
+00001150  1CFC 004D                141  op_0011     MOVE.B  #'M',(A6)+      Add M to output
+00001154  1CFC 004F                142              MOVE.B  #'O',(A6)+      Add O to output
+00001158  1CFC 0056                143              MOVE.B  #'V',(A6)+      Add V to output
+0000115C  1CFC 0045                144              MOVE.B  #'E',(A6)+      Add E to output
+00001160  1CFC 002E                145              MOVE.B  #'.',(A6)+      Add . to output
+00001164  1CFC 004C                146              MOVE.B  #'L',(A6)+      Add L to output
+00001168  1CFC 0020                147              MOVE.B  #' ',(A6)+      Add ' ' to output
+0000116C  1CFC 0020                148              MOVE.B  #' ',(A6)+      Add ' ' to output
+00001170  1CFC 0020                149              MOVE.B  #' ',(A6)+      Add ' ' to output
+00001174  1CFC 0020                150              MOVE.B  #' ',(A6)+      Add ' ' to output
+00001178  1CFC 0020                151              MOVE.B  #' ',(A6)+      Add ' ' to output           
+0000117C  4E75                     152              RTS
+0000117E                           153  
+0000117E                           154  ************************************************************
+0000117E                           155  *   0100
+0000117E                           156  *   CLR
+0000117E                           157  *   JSR
+0000117E                           158  *   LEA
+0000117E                           159  *   MOVEM
+0000117E                           160  *   RTS
+0000117E                           161  ************************************************************
+0000117E  4E75                     162  op_0100     RTS
+00001180                           163  
+00001180                           164  ************************************************************
+00001180                           165  *   0101
+00001180                           166  *   SUBQ
+00001180                           167  ************************************************************
+00001180  1CFC 0053                168  op_0101     MOVE.B  #'S',(A6)+      Add S to output
+00001184  1CFC 0055                169              MOVE.B  #'U',(A6)+      Add U to output
+00001188  1CFC 0042                170              MOVE.B  #'B',(A6)+      Add B to output
+0000118C  1CFC 0051                171              MOVE.B  #'Q',(A6)+      Add Q to output
+00001190  1CFC 002E                172              MOVE.B  #'.',(A6)+      Add . to output 
+00001194  3602                     173              MOVE.W  D2,D3           get word back
+00001196  E14B                     174              LSL.W   #8,D3           shift left 8
+00001198  E04B                     175              LSR.W   #8,D3           shift right 8
+0000119A  EC4B                     176              LSR.W   #6,D3           shift right 6
+0000119C  C6FC 0006                177              MULU    #6,D3           create offset
+000011A0  45F9 000012B8            178              LEA     get_size,A2     load size jump table
+000011A6  4EB2 3000                179              JSR     0(A2,D3)        Jump to size table  
+000011AA  1CFC 0020                180              MOVE.B  #' ',(A6)+      Add ' ' to output
+000011AE  1CFC 0020                181              MOVE.B  #' ',(A6)+      Add ' ' to output
+000011B2  1CFC 0020                182              MOVE.B  #' ',(A6)+      Add ' ' to output
+000011B6  1CFC 0020                183              MOVE.B  #' ',(A6)+      Add ' ' to output
+000011BA  1CFC 0020                184              MOVE.B  #' ',(A6)+      Add ' ' to output         
+000011BE  4E75                     185              RTS
+000011C0                           186  
+000011C0                           187  ************************************************************
+000011C0                           188  *   0110
+000011C0                           189  *   BCC
+000011C0                           190  *   BGT
+000011C0                           191  *   BLE
+000011C0                           192  *   BVS
+000011C0                           193  ************************************************************
+000011C0  4E75                     194  op_0110     RTS
+000011C2                           195  
+000011C2                           196  ************************************************************
+000011C2                           197  *   0111
+000011C2                           198  *   MOVEQ
+000011C2                           199  ************************************************************
+000011C2  1CFC 004D                200  op_0111     MOVE.B  #'M',(A6)+      Add M to output
+000011C6  1CFC 004F                201              MOVE.B  #'O',(A6)+      Add O to output
+000011CA  1CFC 0056                202              MOVE.B  #'V',(A6)+      Add V to output
+000011CE  1CFC 0045                203              MOVE.B  #'E',(A6)+      Add E to output
+000011D2  1CFC 0051                204              MOVE.B  #'Q',(A6)+      Add Q to output
+000011D6  1CFC 002E                205              MOVE.B  #'.',(A6)+      Add . to output
+000011DA  3602                     206              MOVE.W  D2,D3           get word back
+000011DC  E14B                     207              LSL.W   #8,D3           shift left 8
+000011DE  E04B                     208              LSR.W   #8,D3           shift right 8
+000011E0  EC4B                     209              LSR.W   #6,D3           shift right 6
+000011E2  C6FC 0006                210              MULU    #6,D3           create offset
+000011E6  45F9 000012B8            211              LEA     get_size,A2     load size jump table
+000011EC  4EB2 3000                212              JSR     0(A2,D3)        Jump to size table
+000011F0  1CFC 0020                213              MOVE.B  #' ',(A6)+      Add ' ' to output
+000011F4  1CFC 0020                214              MOVE.B  #' ',(A6)+      Add ' ' to output
+000011F8  1CFC 0020                215              MOVE.B  #' ',(A6)+      Add ' ' to output
+000011FC  1CFC 0020                216              MOVE.B  #' ',(A6)+      Add ' ' to output
+00001200  1CFC 0020                217              MOVE.B  #' ',(A6)+      Add ' ' to output             
+00001204  4E75                     218              RTS
+00001206                           219              
+00001206                           220  ************************************************************
+00001206                           221  *   1000
+00001206                           222  *   DIVU
+00001206                           223  *   LOR
+00001206                           224  ************************************************************
+00001206  4E75                     225  op_1000     RTS
+00001208                           226  
+00001208                           227  ************************************************************
+00001208                           228  *   1001
+00001208                           229  *   SUB
+00001208                           230  *   SUBA
+00001208                           231  ************************************************************
+00001208  4E75                     232  op_1001     RTS
+0000120A                           233  
+0000120A                           234  ************************************************************
+0000120A                           235  *   1010 unknown
+0000120A                           236  ************************************************************
+0000120A  1CFC 0042                237  op_1010     MOVE.B  #'B',(A6)+      Add B to output
+0000120E  1CFC 0041                238              MOVE.B  #'A',(A6)+      Add A to output
+00001212  1CFC 0044                239              MOVE.B  #'D',(A6)+      Add D to output
+00001216  1CFC 0020                240              MOVE.B  #' ',(A6)+      Add ' ' to output
+0000121A  1CFC 0043                241              MOVE.B  #'C',(A6)+      Add C to output
+0000121E  1CFC 004F                242              MOVE.B  #'O',(A6)+      Add O to output
+00001222  1CFC 0044                243              MOVE.B  #'D',(A6)+      Add D to output
+00001226  1CFC 0045                244              MOVE.B  #'E',(A6)+      Add E to output
+0000122A  4E75                     245              RTS
+0000122C                           246  
+0000122C                           247  ************************************************************
+0000122C                           248  *   1011
+0000122C                           249  *   CMP
+0000122C                           250  *   CMPA
+0000122C                           251  *   EOR
+0000122C                           252  ************************************************************
+0000122C  4E75                     253  op_1011     RTS
+0000122E                           254  
+0000122E                           255  ************************************************************
+0000122E                           256  *   1100
+0000122E                           257  *   AND
+0000122E                           258  *   MULS
+0000122E                           259  ************************************************************
+0000122E  4E75                     260  op_1100     RTS
+00001230                           261  
+00001230                           262  ************************************************************
+00001230                           263  *   1101
+00001230                           264  *   ADD
+00001230                           265  *   ADDA
+00001230                           266  ************************************************************
+00001230  4E75                     267  op_1101     RTS
+00001232                           268  
+00001232                           269  ************************************************************
+00001232                           270  *   1110
+00001232                           271  *   ASR
+00001232                           272  *   LSL
+00001232                           273  *   ROL
+00001232                           274  ************************************************************
+00001232  3602                     275  op_1110     MOVE.W  D2,D3           get next word
+00001234  E14B                     276              LSL.W   #8,D3           shift left 8
+00001236  E74B                     277              LSL.W   #3,D3           shift 3 to put bit 4 at end
+00001238  E04B                     278              LSR.W   #8,D3           shift back 8
+0000123A  EC4B                     279              LSR.W   #6,D3           shift back 6 to put bit 3 at start
+0000123C  C6FC 0006                280              MULU.W  #6,D3           form offset
+00001240  45F9 0000124C            281              LEA     op_1110_sub,A2  load op_1110_sub to A2
+00001246  4EB2 3000                282              JSR     0(A2,D3)        jump to table            
+0000124A  4E75                     283              RTS
+0000124C                           284  ************************************************************
+0000124C                           285  *   LS\AS\RO sub table
+0000124C                           286  ************************************************************
+0000124C  4EF9 0000125E            287  op_1110_sub JMP     arithm
+00001252  4EF9 0000126A            288              JMP     logical
+00001258  4EF9 00001276            289              JMP     rotate
+0000125E  1CFC 0041                290  arithm      MOVE.B  #'A',(A6)+      Add A to output
+00001262  1CFC 0053                291              MOVE.B  #'S',(A6)+      Add S to output
+00001266  6000 001A                292              BRA     direction
+0000126A  1CFC 004C                293  logical     MOVE.B  #'L',(A6)+      Add L to output
+0000126E  1CFC 0053                294              MOVE.B  #'S',(A6)+      Add S to output
+00001272  6000 000E                295              BRA     direction
+00001276  1CFC 0052                296  rotate      MOVE.B  #'R',(A6)+      Add R to output
+0000127A  1CFC 004F                297              MOVE.B  #'O',(A6)+      Add O to output
+0000127E  6000 0002                298              BRA     direction
+00001282  3602                     299  direction   MOVE.W  D2,D3           Get instruction
+00001284  0803 0005                300              BTST.L  #5,D3           Test bit 5
+00001288  6700 0006                301              BEQ     left
+0000128C  1CFC 0052                302              MOVE.B  #'R',(A6)+      Add R to output 
+00001290  1CFC 004C                303  left        MOVE.B  #'L',(A6)+      Add L to output            
+00001294  4E75                     304              RTS
+00001296                           305  ************************************************************
+00001296                           306  *   1111 unknown
+00001296                           307  ************************************************************
+00001296  1CFC 0042                308  op_1111     MOVE.B  #'B',(A6)+      Add B to output
+0000129A  1CFC 0041                309              MOVE.B  #'A',(A6)+      Add A to output
+0000129E  1CFC 0044                310              MOVE.B  #'D',(A6)+      Add D to output
+000012A2  1CFC 0020                311              MOVE.B  #' ',(A6)+      Add ' ' to output
+000012A6  1CFC 0043                312              MOVE.B  #'C',(A6)+      Add C to output
+000012AA  1CFC 004F                313              MOVE.B  #'O',(A6)+      Add O to output
+000012AE  1CFC 0044                314              MOVE.B  #'D',(A6)+      Add D to output
+000012B2  1CFC 0045                315              MOVE.B  #'E',(A6)+      Add E to output
+000012B6  4E75                     316              RTS
+000012B8                           317  
+000012B8                           318  ************************************************************
+000012B8                           319  *   Size Jump Table
+000012B8                           320  ************************************************************
+000012B8  4EF9 000012D2            321  get_size    JMP size00              illegal
+000012BE  4EF9 000012F4            322              JMP size01              BYTE
+000012C4  4EF9 000012FA            323              JMP size10              WORD
+000012CA  4EF9 00001300            324              JMP size11              LONG
+000012D0  4E75                     325              RTS
+000012D2                           326  ************************************************************
+000012D2                           327  *   Size Sub-Jump Table
+000012D2                           328  ************************************************************
+000012D2  1CFC 0042                329  size00      MOVE.B  #'B',(A6)+      Add B to output
+000012D6  1CFC 0041                330              MOVE.B  #'A',(A6)+      Add A to output
+000012DA  1CFC 0044                331              MOVE.B  #'D',(A6)+      Add D to output
+000012DE  1CFC 0020                332              MOVE.B  #' ',(A6)+      Add ' ' to output
+000012E2  1CFC 0053                333              MOVE.B  #'S',(A6)+      Add S to output
+000012E6  1CFC 0049                334              MOVE.B  #'I',(A6)+      Add I to output
+000012EA  1CFC 005A                335              MOVE.B  #'Z',(A6)+      Add Z to output
+000012EE  1CFC 0045                336              MOVE.B  #'E',(A6)+      Add E to output
+000012F2  4E75                     337              RTS
+000012F4  1CFC 0042                338  size01      MOVE.B  #'B',(A6)+      Add B to output
+000012F8  4E75                     339              RTS
+000012FA  1CFC 0057                340  size10      MOVE.B  #'W',(A6)+      Add W to output
+000012FE  4E75                     341              RTS
+00001300  1CFC 004C                342  size11      MOVE.B  #'L',(A6)+      Add L to output
+00001304  4E75                     343              RTS           
+00001306                           344  
+00001306                           345  * Put variables and constants here
+00001306                           346  output  DS.B 80
+00001356                           347  
+00001356  4240                     348  done    CLR     D0
+00001358                           349          END    START        ; last line of source
+
+No errors detected
+No warnings generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+ARITHM              125E
+DIRECTION           1282
+DONE                1356
+GET_SIZE            12B8
+LEFT                1290
+LOGICAL             126A
+MAIN                1078
+OP_0000             10F2
+OP_0001             10F4
+OP_0010             1122
+OP_0011             1150
+OP_0100             117E
+OP_0101             1180
+OP_0110             11C0
+OP_0111             11C2
+OP_1000             1206
+OP_1001             1208
+OP_1010             120A
+OP_1011             122C
+OP_1100             122E
+OP_1101             1230
+OP_1110             1232
+OP_1110_SUB         124C
+OP_1111             1296
+OP_JUMP             1090
+OUTPUT              1306
+PRINT               105A
+ROTATE              1276
+SIZE00              12D2
+SIZE01              12F4
+SIZE10              12FA
+SIZE11              1300
+START               1000

@@ -31,7 +31,6 @@ START:                  ; first instruction of program
             ADDI.W  #$0A89,(A4)+
             ADDI.W  #$00AB,(A4)+
 
-
             LEA     $7000,A4        reset A4
             CLR     D6
             ADDI.B  #16,D6
@@ -456,7 +455,27 @@ op_0111     MOVE.B  #'M',(A6)+      Add M to output
 *   DIVU
 *   LOR
 ************************************************************
-op_1000     RTS
+op_1000     BTST    #8,D2           check if bit 8 is 1
+            BEQ     sub1000         jump to sub1000 if 0
+sub1000     JSR     iso6to7         get bits 6 and 7
+            CMP.B   #%11,D2         if %11 then its DIVU
+            BNE     bad_code        jump to bad output
+            MOVE.B  #'D',(A6)+      Add D to output
+            MOVE.B  #'I',(A6)+      Add I to output
+            MOVE.B  #'V',(A6)+      Add V to output
+            MOVE.B  #'U',(A6)+      Add U to output
+            MOVE.B  #'.',(A6)+      Add . to output
+            MOVE.B  #'W',(A6)+      Add W to output
+            JSR     print4spcs      print 4 spaces
+            JSR     addressing      get ea
+            *TODO: check if the mode is correct
+            MOVE.B  #',',(A6)+      Add , to output
+            MOVE.B  #'D',(A6)+      Add D to output
+            JSR     iso9to11        get register bits
+            MULU    #6,D3           form offset
+            LEA     reg_num,A2      load reg table
+            JSR     0(A2,D3)        jump to table
+            RTS
 ************************************************************
 *   1001
 *   SUB
@@ -496,10 +515,53 @@ op_1101     JSR     iso4to5         check bits 4 to 5
             MOVE.B  #'D',(A6)+      Add D to output
             MOVE.B  #'D',(A6)+      Add D to output
             MOVE.B  #'.',(A6)+      Add . to output
-            JSR     get_size
+            JSR     iso6to7         get size of operation
+            MULU.W  #6,D3           form offset
+            LEA     get_size,A2     load size table
+            JSR     0(A2,D3)        get size            
             JSR     print5spcs
+            BTST    #8,D2
+            BEQ     ea_to_dn
+dn_to_ea    MOVE.B  #'D',(A6)+      Add D to output
+            JSR     iso9to11        isolate register bits
+            MULU.W  #6,D3
+            LEA     reg_num,A2      load reg_num table
+            JSR     0(A2,D3)        get reg_num
+            MOVE.B  #',',(A6)+      Add , to output
             JSR     addressing
-adda                    
+            *TODO: check if the mode is correct                
+            RTS            
+ea_to_dn    JSR     addressing
+            MOVE.B  #',',(A6)+      Add , to output
+            MOVE.B  #'D',(A6)+      Add D to output
+            JSR     iso9to11        isolate register bits
+            MULU.W  #6,D3
+            LEA     reg_num,A2      load reg_num table
+            JSR     0(A2,D3)        get reg_num
+            RTS
+adda        MOVE.B  #'A',(A6)+      Add A to output
+            MOVE.B  #'D',(A6)+      Add D to output
+            MOVE.B  #'D',(A6)+      Add D to output
+            MOVE.B  #'A',(A6)+      Add A to output            
+            MOVE.B  #'.',(A6)+      Add . to output 
+            JSR     iso6to7         get operation size
+            CMP.B   #%011,D3        check if word
+            BEQ     adda_w
+            CMP.B   #%111,D3        check if long
+            BEQ     adda_l
+            JMP     bad_code        byte operations not allowed
+adda_w      MOVE.B  #'W',(A6)+      Add W to output
+            JMP     com_adda        complete adda
+adda_l      MOVE.B  #'L',(A6)+      Add L to output
+com_adda    JSR     print4spcs
+            JSR     addressing
+            MOVE.B  #',',(A6)+      Add , to output
+            MOVE.B  #'A',(A6)+      Add A to output
+            JSR     iso9to11        get register bits
+            MULU.W  #6,D3
+            LEA     reg_num,A2      load reg_num table
+            JSR     0(A2,D3)        get reg_num  
+            RTS         
 addx        JMP     bad_code        unknown code
             RTS
 ************************************************************
@@ -671,14 +733,6 @@ iso12to15   MOVE.W  D2,D3           get current instruction
             ANDI.W  #$F,D3          mask out all but first 3
             RTS         
 ************************************************************
-*   Size Jump Table
-************************************************************
-get_size    JMP size00              BYTE
-            JMP size01              WORD
-            JMP size10              LONG
-            JMP size11              ILLEGAL
-            RTS
-************************************************************
 *   Get next word or long
 ************************************************************            
 get_word    CLR     D3
@@ -738,7 +792,15 @@ get_char    ANDI.W  #$000F,D4
             BRA     add_char
 char_up     ADDI.B #$37,D4          Add $37 to get A-F ASCII
 add_char    MOVE.B D4,(A6)+         Load value into output
-            RTS                     return           
+            RTS                     return  
+************************************************************
+*   Size Jump Table
+************************************************************
+get_size    JMP size00              BYTE
+            JMP size01              WORD
+            JMP size10              LONG
+            JMP size11              ILLEGAL
+            RTS         
 ************************************************************
 *   Size Sub-Jump Table
 ************************************************************
